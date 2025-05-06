@@ -1,0 +1,8 @@
+[tool.pytest.ini_options]
+pythonpath = [
+  "chainlit_app/",
+]
+
+[tool.ruff]
+
+line-length = 100
