@@ -1,8 +1,11 @@
 import chainlit as cl
 from app.aim_tracker import end_aim_run, start_aim_run
-from app.databases import RetrieveData, get_context_from_db
+from app.databases import RetrieveData, get_context_from_db, post_embeddings
 from app.embedding_generator import embedding_generator
 from app.models import get_conversational_answer
+from app.parser import extract_text_from_pdf
+from app.splitter.markdown_splitter import split_markdown_text as markdown_split
+from app.splitter.semantic_splitter import split_semantic as semantic_split
 from chainlit.input_widget import Select, Slider
 from chainlit.types import ThreadDict
 from langchain.memory import ConversationBufferMemory
@@ -24,6 +27,15 @@ async def start():
                 values=[
                     "llama3.1",
                     "gemma3:1b",
+                ],
+                initial_index=0,
+            ),
+            Select(
+                id="splitter",
+                label="Tipo de splitter",
+                values=[
+                    "Markdown",
+                    "Semantico",
                 ],
                 initial_index=0,
             ),
@@ -133,6 +145,48 @@ async def main(message: cl.Message):
     user = cl.user_session.get("user")
     session_number = cl.user_session.get("session_number")
     settings = cl.user_session.get("settings")
+    if (
+        message.elements
+    ):  # Esto requiere modificarse por Role.CLIENTE para utilisar la funcion de subir pdfs...
+        file = message.elements[0]
+        # msg = cl.Message(content=f"Procesando archivo `{file.name}`...")
+        # await msg.send()
+        try:
+            # Extraer el texto del PDF
+            print(f"Extrayendo texto de `{file.name}`...")
+            text = extract_text_from_pdf(file.path)
+
+            # Splittear el texto en chunks semánticos
+            print(f"Splitteando texto de `{file.name}`...")
+            splitter_type = settings.get("splitter", "Markdown").lower()
+
+            if splitter_type == "markdown":
+                chunks = markdown_split(text)
+            elif splitter_type == "semantico":
+                chunks = semantic_split(text)
+            else:
+                raise ValueError(f"Splitter desconocido: {splitter_type}")
+
+            print(f"usando splitter `{splitter_type}`")
+
+            # Generar los embeddings de los chunks
+            print(f"Generando embeddings de `{file.name}`...")
+            embeddings = await cl.make_async(embedding_generator.get_embeddings)(chunks)
+
+            # Formatear y cargar los embeddings en la base de datos
+            print(f"Formateando embeddings de `{file.name}`...")
+            embeddings_data = await cl.make_async(embedding_generator.format_for_database)(
+                embeddings, chunks
+            )
+            print("Embeddings formateados")
+            result = await cl.make_async(post_embeddings)(
+                collection_name=collection_name, dataWithEmbeddings=embeddings_data
+            )
+            print(f"Archivo `{file.name}` cargado exitosamente, `{result}`")
+            # msg.content = f"Archivo `{file.name}` cargado exitosamente, `{result}`"
+        except Exception as e:
+            # msg.content = f"Error procesando el archivo `{file.name}`: {str(e)}"
+            print(f"Error procesando el archivo `{file.name}`: {str(e)}")
 
     msg = cl.Message(content="")  # Solo muestra el loader si no se envió otro mensaje
     await msg.send()

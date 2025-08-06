@@ -1,13 +1,13 @@
 services:
 
 
-  chainlit-app:
-    container_name: prod-chainlit
+  chainlit-app-frlp:
+    container_name: chainlit-frlp
     build:
       context: chainlit_app/
       dockerfile: Dockerfile
     ports:
-      - 80:80
+      - 8003:80
     environment:
       - MODEL_URL=http://ollama
       - MODEL_PORT=11434
