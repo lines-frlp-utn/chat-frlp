@@ -1,87 +1,13 @@
-from typing import Dict
-
 import chainlit as cl
 from app.aim_tracker import end_aim_run, start_aim_run
-from app.auth import Role, create_user, user_exists
-from app.databases import RetrieveData, get_context_from_db, post_embeddings
+from app.databases import RetrieveData, get_context_from_db
 from app.embedding_generator import embedding_generator
 from app.models import get_conversational_answer
-from app.parser import extract_text_from_pdf
-from app.splitter.markdown_splitter import split_markdown_text as markdown_split
-from app.splitter.semantic_splitter import split_semantic as semantic_split
 from chainlit.input_widget import Select, Slider
 from chainlit.types import ThreadDict
 from langchain.memory import ConversationBufferMemory
 
-collection_name = "prueba_lines"
-
-
-def format_docs(docs):
-    return "\n\n".join([d.page_content for d in docs])
-
-
-# Callback de autenticación
-@cl.password_auth_callback
-def auth_callback(username: str, password: str):
-    if username and password:
-        user = user_exists(username, password)
-        if user.exists is False:
-            user = create_user(username, Role.CLIENTE, password, name=username)
-            if user:
-                print(f"User created: {username}")
-                return cl.User(
-                    identifier=username,
-                    metadata={"role": Role.CLIENTE, "provider": "credentials", "display_name": username}
-                )
-            else:
-                print(f"Error creating user: {username}")
-                return None
-        else:
-            print(f"User exists: {user}")
-            return cl.User(
-                identifier=username,
-                metadata={"role": user.role_name, "provider": "credentials", "display_name": username}
-            )
-    else:
-        return None
-
-
-@cl.oauth_callback
-def oauth_callback(
-    provider_id: str,
-    token: str,
-    raw_user_data: Dict[str, str],
-):
-    email = raw_user_data.get("email")
-    display_name = raw_user_data.get("name", "")
-    picture = raw_user_data.get("picture", "")
-
-    if not email:
-        print("OAuth callback: Email no proporcionado")
-        return None
-    try:
-        user = user_exists(email, "")
-        if not user or user.exists is False:
-            print("Usuario no existe, creando con OAuth")
-            created = create_user(email, Role.CLIENTE, "", provider_id, email, picture, name=display_name)
-            if created:
-                role = Role.CLIENTE
-        else:
-            print("Usuario encontrado")
-            role = user.role_name
-
-    except Exception as e:
-        print(f"Error durante verificación/creación de usuario: {e}")
-        return None
-
-    return cl.User(
-        identifier=email,
-        metadata={
-            "role": role,
-            "provider": provider_id,
-            "display_name": display_name
-        },
-    )
+collection_name = "chat_frlp"
 
 
 @cl.on_chat_start
@@ -98,15 +24,6 @@ async def start():
                 values=[
                     "llama3.1",
                     "gemma3:1b",
-                ],
-                initial_index=0,
-            ),
-            Select(
-                id="splitter",
-                label="Tipo de splitter",
-                values=[
-                    "Markdown",
-                    "Semantico",
                 ],
                 initial_index=0,
             ),
@@ -216,48 +133,6 @@ async def main(message: cl.Message):
     user = cl.user_session.get("user")
     session_number = cl.user_session.get("session_number")
     settings = cl.user_session.get("settings")
-    if (
-        message.elements and user.metadata["role"] == Role.CLIENTE
-    ):  # Esto requiere modificarse por Role.CLIENTE para utilisar la funcion de subir pdfs...
-        file = message.elements[0]
-        # msg = cl.Message(content=f"Procesando archivo `{file.name}`...")
-        # await msg.send()
-        try:
-            # Extraer el texto del PDF
-            print(f"Extrayendo texto de `{file.name}`...")
-            text = extract_text_from_pdf(file.path)
-
-            # Splittear el texto en chunks semánticos
-            print(f"Splitteando texto de `{file.name}`...")
-            splitter_type = settings.get("splitter", "Markdown").lower()
-
-            if splitter_type == "markdown":
-                chunks = markdown_split(text)
-            elif splitter_type == "semantico":
-                chunks = semantic_split(text)
-            else:
-                raise ValueError(f"Splitter desconocido: {splitter_type}")
-
-            print(f"usando splitter `{splitter_type}`")
-
-            # Generar los embeddings de los chunks
-            print(f"Generando embeddings de `{file.name}`...")
-            embeddings = await cl.make_async(embedding_generator.get_embeddings)(chunks)
-
-            # Formatear y cargar los embeddings en la base de datos
-            print(f"Formateando embeddings de `{file.name}`...")
-            embeddings_data = await cl.make_async(embedding_generator.format_for_database)(
-                embeddings, chunks
-            )
-            print("Embeddings formateados")
-            result = await cl.make_async(post_embeddings)(
-                collection_name=collection_name, dataWithEmbeddings=embeddings_data
-            )
-            print(f"Archivo `{file.name}` cargado exitosamente, `{result}`")
-            # msg.content = f"Archivo `{file.name}` cargado exitosamente, `{result}`"
-        except Exception as e:
-            # msg.content = f"Error procesando el archivo `{file.name}`: {str(e)}"
-            print(f"Error procesando el archivo `{file.name}`: {str(e)}")
 
     msg = cl.Message(content="")  # Solo muestra el loader si no se envió otro mensaje
     await msg.send()
