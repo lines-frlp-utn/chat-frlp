@@ -26,7 +26,7 @@ async def start():
                 label="model",
                 values=[
                     "llama3.1",
-                    "gemma3:1b",
+                    "qwen2.5vl",
                 ],
                 initial_index=0,
             ),
