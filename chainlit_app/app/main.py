@@ -25,8 +25,8 @@ async def start():
                 id="model",
                 label="model",
                 values=[
-                    "llama3.1",
                     "qwen2.5vl",
+                    "llama3.1",
                 ],
                 initial_index=0,
             ),
