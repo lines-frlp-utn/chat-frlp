@@ -88,31 +88,31 @@ custom_js = "../public/script.js"
 # custom_build = "./public/build"
 
 # Specify optional one or more custom links in the header.
-[[UI.header_links]]
-    name = "Email"
-    display_name = "IA-Lines@frlp.utn.edu.ar"
-    icon_url = "../../public/email.png"
-    url = "mailto:IA-Lines@frlp.utn.edu.ar"
-[[UI.header_links]]
-    name = "Instagram"
-    display_name = ""
-    icon_url = "../../public/instagram.png"
-    url = "https://www.instagram.com/lines_ia"
-[[UI.header_links]]
-    name = "Github"
-    display_name = ""
-    icon_url = "../../public/github.png"
-    url = "https://github.com/lines-frlp-utn"
-[[UI.header_links]]
-    name = "LinkedIn"
-    display_name = ""
-    icon_url = "../../public/linkedin.png"
-    url = "https://www.linkedin.com/company/lines-frlp/"     
- [[UI.header_links]]
-    name = "Website"
-    display_name = ""
-    icon_url = "../../public/logo.png"
-    url = "https://lines.frlp.utn.edu.ar/"
+#[[UI.header_links]]
+#    name = "Email"
+#    display_name = "IA-Lines@frlp.utn.edu.ar"
+#    icon_url = "../../public/email.png"
+#    url = "mailto:IA-Lines@frlp.utn.edu.ar"
+#[[UI.header_links]]
+#    name = "Instagram"
+#    display_name = ""
+#    icon_url = "../../public/instagram.png"
+#    url = "https://www.instagram.com/lines_ia"
+#[[UI.header_links]]
+#    name = "Github"
+#    display_name = ""
+#    icon_url = "../../public/github.png"
+#    url = "https://github.com/lines-frlp-utn"
+#[[UI.header_links]]
+#    name = "LinkedIn"
+#    display_name = ""
+#    icon_url = "../../public/linkedin.png"
+#    url = "https://www.linkedin.com/company/lines-frlp/"     
+# [[UI.header_links]]
+#    name = "Website"
+#    display_name = ""
+#    icon_url = "../../public/logo.png"
+#    url = "https://lines.frlp.utn.edu.ar/"
 
 [meta]
 generated_by = "2.2.1"
